@@ -6,9 +6,21 @@ export default defineConfig({
   server: {
     proxy: {
       '/ai-proxy': {
-        target: 'https://text.pollinations.ai',
+        target: 'https://gen.pollinations.ai',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ai-proxy/, ''),
+        secure: true,
+      },
+      '/openai-proxy': {
+        target: 'https://api.openai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/openai-proxy/, ''),
+        secure: true,
+      },
+      '/anthropic-proxy': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/anthropic-proxy/, ''),
         secure: true,
       }
     }

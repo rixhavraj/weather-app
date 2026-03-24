@@ -58,7 +58,7 @@ function AQIAlertCard({ aqi, locationName, weatherData, collapsed = false }) {
         <p style={{ fontSize: '0.8rem', opacity: 0.65 }}>Expand for personalized air-quality tips.</p>
       ) : info.bad ? (
         <div style={{ fontSize: '0.85rem', lineHeight: 1.65, opacity: 0.92, whiteSpace: 'pre-wrap' }}>
-          {loading ? <span style={{ opacity: 0.5 }}>⏳ Gemini AI generating tips…</span> : tips}
+          {loading ? <span style={{ opacity: 0.5 }}>⏳ Anthropic Claude generating tips…</span> : tips}
         </div>
       ) : (
         <p style={{ fontSize: '0.85rem', opacity: 0.65 }}>Air quality is good — safe to go outside! 🌿</p>
@@ -72,7 +72,7 @@ function AQIAlertCard({ aqi, locationName, weatherData, collapsed = false }) {
 export default function AIChatbar({ weatherData, locationName }) {
   const [messages, setMessages] = useState([{
     role: 'model',
-    text: '👋 Hi! I\'m your Gemini-powered weather assistant. Ask me anything about weather, farming, air quality, crops, or climate!'
+    text: '👋 Hi! I\'m your Claude-powered weather assistant. Ask me anything about weather, farming, air quality, crops, or climate!'
   }]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -84,7 +84,7 @@ export default function AIChatbar({ weatherData, locationName }) {
     if (locationName && locationName !== 'Locating...') {
       setMessages([{
         role: 'model',
-        text: `👋 Hi! I'm your Gemini AI for ${locationName}. Ask me about crops, air quality, UV safety, farming tips, or anything weather-related!`
+        text: `👋 Hi! I'm your Claude AI for ${locationName}. Ask me about crops, air quality, UV safety, farming tips, or anything weather-related!`
       }]);
     }
   }, [locationName]);
@@ -131,8 +131,8 @@ Only answer questions related to weather, climate, farming, crops, air quality, 
       const reply = await askGemini(prompt);
       setMessages(prev => [...prev, { role: 'model', text: reply }]);
     } catch (e) {
-      console.error('Gemini error:', e);
-      setMessages(prev => [...prev, { role: 'model', text: '⚠️ Could not connect to Gemini AI right now. Please try again.' }]);
+      console.error('Anthropic error:', e);
+      setMessages(prev => [...prev, { role: 'model', text: '⚠️ Could not connect to Claude AI right now. Please try again.' }]);
     }
     setIsTyping(false);
   };
@@ -155,7 +155,7 @@ Only answer questions related to weather, climate, farming, crops, air quality, 
         <div className="chat-aqi-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div>
             <h3 style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.55, marginBottom: '0.2rem' }}>Air Quality</h3>
-            <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Gemini AI insights</p>
+            <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Claude AI insights</p>
           </div>
           <button className="metric-pill small" style={{ marginLeft: 'auto' }} onClick={() => setAqiExpanded(prev => !prev)}>
             {aqiExpanded ? 'Hide tips' : 'Show tips'}
@@ -180,9 +180,9 @@ Only answer questions related to weather, climate, farming, crops, air quality, 
           <AlertCircle size={15} color="#50E3C2" />
           <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Weather AI Chat</span>
           <span style={{
-            fontSize: '0.7rem', background: 'linear-gradient(135deg, #4285F4, #34A853)',
+            fontSize: '0.7rem', background: 'linear-gradient(135deg, #D44333, #FF8E3C)',
             color: '#fff', borderRadius: '20px', padding: '2px 10px', marginLeft: 'auto', fontWeight: 700
-          }}>Gemini AI</span>
+          }}>Claude AI</span>
         </div>
 
         {/* Messages */}
@@ -225,7 +225,7 @@ Only answer questions related to weather, climate, farming, crops, air quality, 
               transition={{ repeat: Infinity, duration: 1.1 }}
               style={{ alignSelf: 'flex-start', fontSize: '0.82rem', opacity: 0.5 }}
             >
-              ✨ Gemini is thinking…
+              ✨ Claude is thinking…
             </motion.div>
           )}
           <div ref={scrollRef} />
@@ -259,7 +259,7 @@ Only answer questions related to weather, climate, farming, crops, air quality, 
         }}>
           <input
             type="text"
-            placeholder="Ask Gemini about weather, crops, AQI…"
+            placeholder="Ask Claude about weather, crops, AQI…"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !isTyping && handleSend()}

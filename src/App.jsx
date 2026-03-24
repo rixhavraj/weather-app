@@ -347,7 +347,7 @@ Keep total response under 80 words. Be specific to the actual values.`;
           <p>{insight.summary}</p>
         </div>
         <div className="metric-detail-block">
-          <h4>✨ Gemini AI Analysis</h4>
+          <h4>✨ Claude AI Analysis</h4>
           {aiLoading ? (
             <p style={{ opacity: 0.5, fontSize: '0.85rem' }}>⏳ Generating expert insight...</p>
           ) : aiInsight ? (
