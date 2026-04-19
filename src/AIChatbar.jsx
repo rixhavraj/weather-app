@@ -103,46 +103,62 @@ export default function AIChatbar({ weatherData, locationName }) {
 
   const buildContext = () => {
     if (!weatherData) return '';
-    return `You are a helpful weather and farming AI assistant. Keep responses concise (3-5 sentences max) and practical.
-
+    return `You are a professional agricultural and weather specialist. Your goal is to provide high-value, practical advice to farmers based on their local weather.
+    
 Current conditions in ${locationName}:
-- Temperature: ${temp}°C (Feels like: ${weatherData?.weather?.current?.apparent_temperature}°C)
-- Humidity: ${humidity}%
+- Temperature: ${temp}°C (Soil Temp: ${weatherData?.weather?.current?.soil_temperature_6cm ?? 'unknown'}°C)
+- Humidity: ${humidity}% (Soil Moisture: ${weatherData?.weather?.current?.soil_moisture_1_to_3cm ?? 'unknown'} m³/m³)
 - Wind Speed: ${wind} km/h
 - Weather Code: ${code}
 - UV Index: ${uv ?? 'unknown'}
 - AQI: ${aqi ?? 'unknown'}
 - Surface Pressure: ${pressure} hPa
 
-Only answer questions related to weather, climate, farming, crops, air quality, and natural conditions. If asked about unrelated topics, politely redirect to weather/farming topics.
+Focus heavily on the benefits for farmers (e.g. "This weather is perfect for X," "Watch out for fungus due to humidity Y"). Only answer questions related to weather, climate, farming, crops, and air quality. Redirect other topics politely. Keep responses under 4 sentences.
 
 `;
   };
 
+  const QUICK_TAPS = [
+    'Soil & Land Prep',
+    'Seed & Variety Selection',
+    'Water & Weather Strategy',
+    'Pest & Disease Control',
+    'Market & Money Trends',
+    'Harvest & Storage Guide'
+  ];
+
   const handleSend = async (textOverride) => {
     const text = (textOverride || input).trim();
     if (!text || isTyping) return;
+
     setMessages(prev => [...prev, { role: 'user', text }]);
     setInput('');
     setIsTyping(true);
 
+    // RESTRICTION CHECK: Only allow Quick-Taps
+    if (!QUICK_TAPS.includes(text) && !textOverride) {
+      await new Promise(r => setTimeout(r, 800)); 
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        text: '⚠️ Network problem: Unauthorized query detected. Please use the expert quick-access buttons for validated agricultural insights.' 
+      }]);
+      setIsTyping(false);
+      return;
+    }
+
     try {
-      const prompt = buildContext() + 'User question: ' + text;
+      const prompt = buildContext() + 'Focus specifically on the category: ' + text + '. User needs detailed localized information for ' + locationName;
       const reply = await askGemini(prompt);
       setMessages(prev => [...prev, { role: 'model', text: reply }]);
     } catch (e) {
-      console.error('Anthropic error:', e);
-      setMessages(prev => [...prev, { role: 'model', text: '⚠️ Could not connect to Claude AI right now. Please try again.' }]);
+      console.error('AI error:', e);
+      setMessages(prev => [...prev, { role: 'model', text: '⚠️ Connection unstable. Please try another expert button.' }]);
     }
     setIsTyping(false);
   };
 
-  const chipPrompts = [
-    'What crops should I grow right now?',
-    'Is the air quality safe today?',
-    'UV safety tips for today?',
-    'Give me a full weather summary'
-  ];
+  const chipPrompts = QUICK_TAPS;
 
   return (
     <aside className="chat-shell" style={{

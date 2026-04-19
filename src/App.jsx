@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, MapPin, Save, CloudRain, Sun, Wind, Droplets, Sunrise, Sunset, Eye, Navigation, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Save, CloudRain, Sun, Wind, Droplets, Sunrise, Sunset, Eye, Navigation, AlertCircle, Leaf, Thermometer, Droplet, Sprout } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { setWeatherAnimation } from '../animations.js';
 import AIChatbar from './AIChatbar.jsx';
@@ -7,7 +7,7 @@ import { askGemini } from './gemini.js';
 
 // --- API Helpers ---
 const fetchWeather = async (lat, lon) => {
-  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure,visibility,soil_temperature_6cm,soil_moisture_1_to_3cm&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,et0_fao_evapotranspiration&timezone=auto`;
   const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi`;
   
   const [wRes, aRes] = await Promise.all([fetch(weatherUrl), fetch(aqiUrl)]);
@@ -215,7 +215,19 @@ export default function App() {
                   <DetailCard icon={<Eye />} label="Visibility" value={`${((data?.weather?.current?.visibility || 0) / 1000).toFixed(1)} km`} metricKey="visibility" isActive={activeMetric === 'visibility'} onSelect={handleMetricSelect} />
                   <DetailCard icon={<Navigation />} label="Pressure" value={`${Math.round(data?.weather?.current?.surface_pressure || 0)} hPa`} metricKey="pressure" isActive={activeMetric === 'pressure'} onSelect={handleMetricSelect} />
                   <DetailCard icon={<Sunrise />} label="Sunrise" value={data?.weather?.daily?.sunrise?.[0] ? new Date(data.weather.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'} metricKey="sunrise" isActive={activeMetric === 'sunrise'} onSelect={handleMetricSelect} />
-                  <DetailCard icon={<Sunset />} label="Sunset" value={data?.weather?.daily?.sunset?.[0] ? new Date(data.weather.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'} metricKey="sunset" isActive={activeMetric === 'sunset'} onSelect={handleMetricSelect} />
+                  <DetailCard icon={<Sun />} label="Sunset" value={data?.weather?.daily?.sunset?.[0] ? new Date(data.weather.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'} metricKey="sunset" isActive={activeMetric === 'sunset'} onSelect={handleMetricSelect} />
+                </div>
+
+                {/* Farmer-Specific Agricultural Grid */}
+                <div style={{ marginTop: '2.5rem', marginBottom: '1rem' }}>
+                  <h3 className="card-title text-shadow" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <Leaf size={20} color="#57d97a" /> Agricultural Insights
+                  </h3>
+                  <div className="weather-details-grid text-shadow" style={{ marginTop: '1rem' }}>
+                    <DetailCard icon={<Thermometer />} label="Soil Temp" value={`${data?.weather?.current?.soil_temperature_6cm || 0}°C`} metricKey="soil_temp" isActive={activeMetric === 'soil_temp'} onSelect={handleMetricSelect} />
+                    <DetailCard icon={<Droplet />} label="Soil Moisture" value={`${(data?.weather?.current?.soil_moisture_1_to_3cm || 0).toFixed(2)} m³/m³`} metricKey="soil_moisture" isActive={activeMetric === 'soil_moisture'} onSelect={handleMetricSelect} />
+                    <DetailCard icon={<Sprout />} label="Evaporation" value={`${data?.weather?.daily?.et0_fao_evapotranspiration?.[0] || 0} mm`} metricKey="et0" isActive={activeMetric === 'et0'} onSelect={handleMetricSelect} />
+                  </div>
                 </div>
 
                 <div className="forecast-section">
@@ -244,6 +256,11 @@ export default function App() {
                     locationName={locationName}
                     weatherData={data}
                   />
+                </div>
+
+                {/* Farmer's Expert Guide Hub */}
+                <div style={{ marginTop: '3.5rem', marginBottom: '2.5rem' }}>
+                  <FarmerKnowledgeHub onSelect={handleMetricSelect} activeMetric={activeMetric} />
                 </div>
               </motion.div>
             )}
@@ -307,12 +324,12 @@ function MetricExplorer({ insights, activeMetric, onMetricChange, locationName, 
 
 Current conditions: Temperature ${current.temperature_2m}°C, Humidity ${current.relative_humidity_2m}%, Wind ${current.wind_speed_10m} km/h, AQI ${weatherData.aqi?.current?.european_aqi ?? 'unknown'}.
 
-Provide:
-1. A 2-sentence expert analysis of what this ${insight.label} value means for daily life
-2. A practical tip for farmers
-3. A health/safety recommendation
-
-Keep total response under 80 words. Be specific to the actual values.`;
+    Provide:
+    1. A detailed explanation of what this "${insight.label}" value means for DIFFERENT types of crops (e.g. grains vs vegetables).
+    2. THE SPECIFIC BENEFIT FOR FARMERS under these conditions (e.g., "Great for sowing," "Ideal for harvesting," "High disease risk").
+    3. A practical irrigation or soil management tip.
+    
+    Keep response professional, expert-level, and under 90 words. Focus HEAVILY on the agricultural benefit.`;
 
     askGemini(prompt)
       .then(t => setAiInsight(t))
@@ -375,6 +392,68 @@ Keep total response under 80 words. Be specific to the actual values.`;
   );
 }
 
+function FarmerKnowledgeHub({ onSelect, activeMetric }) {
+  const categories = [
+    { key: 'soil_prep', label: 'Soil & Land', icon: <Droplet />, desc: 'pH, NPK & Tillage' },
+    { key: 'seed_selection', label: 'Seed & Variety', icon: <Sprout />, desc: 'Hardiness & Maturity' },
+    { key: 'water_mgmt', label: 'Water & Weather', icon: <CloudRain />, desc: 'Irrigation & Frost' },
+    { key: 'pest_control', label: 'Pest & Disease', icon: <AlertCircle />, desc: 'IPM & Weed Mgmt' },
+    { key: 'market_money', label: 'Market & Money', icon: <Navigation />, desc: 'Prices & Buyers' },
+    { key: 'harvest_storage', label: 'Harvest & Storage', icon: <Save />, desc: 'Signs & Handling' },
+  ];
+
+  return (
+    <div className="farmer-knowledge-hub">
+      <div className="hub-header" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="card-title text-shadow" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '1.45rem', fontWeight: 800 }}>
+          <Leaf size={26} color="#57d97a" />
+          Farmer's Expert Guide
+        </h3>
+        <p style={{ fontSize: '0.92rem', opacity: 0.7, marginTop: '0.15rem', color: '#e0f2f1' }}>Strategic agricultural wisdom localized for your city</p>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gap: '1.25rem' 
+      }}>
+        {categories.map((cat) => (
+          <motion.div
+            key={cat.key}
+            whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.12)' }}
+            whileTap={{ scale: 0.97 }}
+            className={`knowledge-card glass-panel ${activeMetric === cat.key ? 'active' : ''}`}
+            onClick={() => onSelect(cat.key)}
+            style={{
+              padding: '1.65rem',
+              cursor: 'pointer',
+              border: activeMetric === cat.key ? '2.5px solid #57d97a' : '1px solid rgba(255,255,255,0.1)',
+              background: activeMetric === cat.key ? 'rgba(87, 217, 122, 0.18)' : 'rgba(0,0,0,0.3)',
+              borderRadius: '20px',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: activeMetric === cat.key ? '0 8px 32px rgba(87, 217, 122, 0.2)' : '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.85rem' }}>
+              <div style={{ 
+                background: 'rgba(255,255,255,0.1)', 
+                padding: '0.65rem', 
+                borderRadius: '14px', 
+                display: 'flex',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1)'
+              }}>
+                {React.cloneElement(cat.icon, { size: 22, color: '#57d97a' })}
+              </div>
+              <h4 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#fff' }}>{cat.label}</h4>
+            </div>
+            <p style={{ fontSize: '0.88rem', opacity: 0.65, lineHeight: 1.6, color: '#b2dfdb' }}>{cat.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function buildMetricInsights(data, locationName) {
   if (!data?.weather?.current) return {};
   const current = data.weather.current;
@@ -384,6 +463,9 @@ function buildMetricInsights(data, locationName) {
   const uv = daily.uv_index_max?.[0];
   const sunrise = daily.sunrise?.[0];
   const sunset = daily.sunset?.[0];
+  const soilTemp = current.soil_temperature_6cm;
+  const soilMoist = current.soil_moisture_1_to_3cm;
+  const et0 = daily.et0_fao_evapotranspiration?.[0];
 
   const withDefault = (value, suffix = '') => (value === undefined || value === null ? '--' : `${value}${suffix}`);
 
@@ -526,6 +608,105 @@ function buildMetricInsights(data, locationName) {
         'Cue smart lights or reminders at sunset through the AI chat.'
       ],
       moreOptions: ['Plan evening walk', 'Log sunset moods', 'Trigger automation at dusk']
+    },
+    soil_temp: {
+      label: 'Soil Temp',
+      valueLabel: withDefault(soilTemp, '°C'),
+      summary: `At 6cm deep, the soil is currently ${withDefault(soilTemp, '°C')}, which is ${soilTemp > 20 ? 'warm' : soilTemp > 10 ? 'moderate' : 'cool'}.`,
+      detailBullets: [
+        soilTemp > 15 ? 'Ideal for warm-season crop germination like maize and soy.' : 'Too cold for most summer seeds; stick to hardy winter crops.',
+        'Biological activity in the soil peaks between 20°C and 30°C.',
+        'Use AI chat to ask for specific seed depth recommendations based on this temperature.'
+      ],
+      moreOptions: ['Check germination charts', 'Log soil history', 'Set frost alerts']
+    },
+    soil_moisture: {
+      label: 'Soil Moisture',
+      valueLabel: soilMoist !== undefined ? `${soilMoist.toFixed(2)} m³/m³` : '--',
+      summary: `Soil moisture is ${soilMoist !== undefined ? soilMoist.toFixed(2) : '--'} m³/m³, indicating ${soilMoist > 0.3 ? 'saturated' : soilMoist > 0.15 ? 'adequate' : 'dry'} conditions.`,
+      detailBullets: [
+        soilMoist < 0.1 ? 'Wilting point warning: immediate irrigation required for most crops.' : 'Moisture levels are stable—monitor evaporation rates.',
+        'Saturated soil (>0.4) increases risk of root rot and nutrient leaching.',
+        'Ideal moisture for tillage is usually between 0.2 and 0.3 m³/m³.'
+      ],
+      moreOptions: ['Schedule irrigation', 'Soil health log', 'Drought risk assessment']
+    },
+    et0: {
+      label: 'Evaporation (ET0)',
+      valueLabel: withDefault(et0, ' mm'),
+      summary: `Standard crops are losing roughly ${withDefault(et0, ' mm')} of water today via evapotranspiration.`,
+      detailBullets: [
+        et0 > 5 ? 'High water loss—increase irrigation depth today.' : 'Low atmospheric demand—water consumption is nominal.',
+        'Crucial for calculating the "Water Balance" in your fields.',
+        'Ask AI for a custom irrigation schedule using this ET0 value.'
+      ],
+      moreOptions: ['Water balance tool', 'Irrigation calculator', 'Crop factor adjustment']
+    },
+    soil_prep: {
+      label: 'Soil & Land Prep',
+      valueLabel: 'Expert Guide',
+      summary: `Localized soil preparation strategy for ${loc}.`,
+      detailBullets: [
+        'Soil Testing: Request a local lab test to check pH (ideal 6.0-7.0) and NPK levels.',
+        'Fertilization: Compare organic compost vs. synthetic NPK based on your soil test.',
+        'Tillage: Evaluate No-till for soil structure preservation vs. conventional plowing for aeration.'
+      ],
+      moreOptions: ['Soil pH guide', 'Fertilizer calculator', 'Tillage equipment']
+    },
+    seed_selection: {
+      label: 'Seed & Variety',
+      valueLabel: 'Expert Guide',
+      summary: `Best crop varieties for ${loc} climate conditions.`,
+      detailBullets: [
+        'Climate Compatibility: Select varieties suited for the local hardiness zone.',
+        'Seed Quality: Prioritize >85% germination rates and disease-resistant hybrids.',
+        'Crop Duration: Ensure "Days to Maturity" fits before the first frost date.'
+      ],
+      moreOptions: ['Seed catalogs', 'Germination test', 'Frost dates']
+    },
+    water_mgmt: {
+      label: 'Water & Weather',
+      valueLabel: 'Expert Guide',
+      summary: `Irrigation and drainage planning for ${loc}.`,
+      detailBullets: [
+        'Irrigation Needs: Adjust water volume based on current growth stage (Sowing vs. Flowering).',
+        'Frost/Rain: Monitor the upcoming 7-day window for sudden frosts or heavy rainfall.',
+        'Drainage: Implement surface drains to prevent waterlogging during monsoon/heavy rain.'
+      ],
+      moreOptions: ['Irrigation schedule', 'Frost alerts', 'Drainage maps']
+    },
+    pest_control: {
+      label: 'Pest & Disease',
+      valueLabel: 'Expert Guide',
+      summary: `Common agricultural threats in ${loc}.`,
+      detailBullets: [
+        'Common Pests: Identify local threats like aphids, stem borers, or fungal leaf spots.',
+        'IPM: Use pheromone traps or beneficial insects as a first line of defense.',
+        'Weed Management: Evaluate pre-emergent vs. post-emergent herbicide timing.'
+      ],
+      moreOptions: ['Pest ID guide', 'IPM checklist', 'Herbicide safety']
+    },
+    market_money: {
+      label: 'Market & Money',
+      valueLabel: 'Expert Guide',
+      summary: `Economics of farming in ${loc}.`,
+      detailBullets: [
+        'Market Prices: Track current demand for staples vs. cash crops in nearby wholesalers.',
+        'Cost of Production: Budget for seeds, labor, fuel, and specialized machinery.',
+        'Buyers: Locate local grain elevators or direct-to-consumer farmers\' markets.'
+      ],
+      moreOptions: ['Price tracker', 'Budget template', 'Buyer directory']
+    },
+    harvest_storage: {
+      label: 'Harvest & Storage',
+      valueLabel: 'Expert Guide',
+      summary: `Post-harvest handling and storage for ${loc}.`,
+      detailBullets: [
+        'Harvest Signs: Look for physical indicators like moisture content (H2O < 14% for grains).',
+        'Post-Harvest: Implement rapid cooling and sorting to maintain produce quality.',
+        'Storage: Maintain ideal temperature/humidity (e.g., 4°C for veg) to prevent rot.'
+      ],
+      moreOptions: ['Harvest toolkit', 'Storage guide', 'Cooling techniques']
     }
   };
 }
