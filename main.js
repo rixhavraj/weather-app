@@ -9,6 +9,7 @@ const state = {
 };
 
 // --- DOM Elements ---
+
 const DOM = {
   searchInput: document.getElementById('search-input'),
   searchResults: document.getElementById('search-results'),
